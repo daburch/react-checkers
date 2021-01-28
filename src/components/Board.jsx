@@ -1,35 +1,35 @@
 import React, { Component } from 'react';
 import Square from './Square'
 
+// Represents a checker board
 class Board extends Component {
     state = {
         board: []
     }
 
     componentDidMount() {
+        // initialize the board
         this.initBoard()
     }
 
     initBoard() {
-        var board = []
+        var iBoard = []
 
+        // initialize the board square colors
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
                 if (i % 2 === 0) {
-                    board.push(j % 2 === 0 ? "white" : "black")
+                    iBoard.push(j % 2 === 0 ? "white" : "black")
                 } else {
-                    board.push(j % 2 === 0 ? "black" : "white")
+                    iBoard.push(j % 2 === 0 ? "black" : "white")
                 }
                 
             }
         }
 
-        this.state.board.map((square, i) => (
-            console.log(square, i)
-        ))
-
+        // set the board state
         this.setState({
-            board: board
+            board: iBoard
         })
     }
 
