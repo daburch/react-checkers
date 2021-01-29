@@ -3,41 +3,39 @@ import Square from './Square'
 
 // Represents a checker board
 class Board extends Component {
-    state = {
-        board: []
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            pieces: props.pieces, 
+            squares: []
+        }
     }
 
     componentDidMount() {
-        // initialize the board
         this.initBoard()
     }
 
     initBoard() {
-        var iBoard = []
+        var b = []
+        var p = this.state.pieces
 
-        // initialize the board square colors
-        for (let i = 0; i < 8; i++) {
-            var iPiece
-            if (i <= 2) {
-                iPiece = "white"
-            } else if (i >= 5) {
-                iPiece = "black"
-            } else {
-                iPiece = "none"
-            }
+        for (let row = 7; row >= 0; row--) {
+            for (let col = 0; col <= 7; col++) {
+                var squareID = String.fromCharCode(97 + col) + (row + 1)
 
-            for (let j = 0; j < 8; j++) {
-                if (i % 2 === 0) {
-                    iBoard.push(j % 2 === 0 ? { color: "white", piece: "none" } : { color: "black", piece: iPiece })
-                } else {
-                    iBoard.push(j % 2 === 0 ? { color: "black", piece: iPiece } : { color: "white", piece: "none" })
-                }
+                var piece = p[squareID]
+
+                var squareColor = (row + col) % 2 === 0 ? "black" : "white"
+                var pieceColor = piece == null ? "none" : piece.color
+
+                b.push({ squareID: squareID, color: squareColor, piece: pieceColor })
             }
         }
 
         // set the board state
         this.setState({
-            board: iBoard
+            squares: b
         })
     }
 
@@ -46,8 +44,8 @@ class Board extends Component {
             <div className="board-container">
                 <div className="board">
                     { 
-                        this.state.board.map((data, i) => (
-                            <Square color={ data.color } piece={ data.piece }/>
+                        this.state.squares.map((data) => (
+                            <Square key={ data.squareID } squareID={ data.squareID } color={ data.color } piece={ data.piece }/>
                         ))
                     }
                 </div>

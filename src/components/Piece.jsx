@@ -1,9 +1,5 @@
 import React from 'react';
 
-const Piece = (props) => {
-    return (
-        <div className={ "circle-" + props.color }> </div>
-    );
-}
+const Piece = (props) => <div className={ "circle-" + props.color } />;
  
 export default Piece;
