@@ -52,6 +52,7 @@
 .square {
   width: 12.5%;
   height: 12.5%;
+  display: inline-flex;
 }
 
 .square-black {
@@ -60,4 +61,24 @@
 
 .square-white {
   background: #f0d9b5;
+}
+
+.circle-white {
+  width: 50%;
+  height: 50%;
+  -webkit-border-radius: 25px;
+  -moz-border-radius: 25px;
+  border-radius: 25px;
+  background: white;
+  margin: auto;
+}
+
+.circle-black {
+  width: 50%;
+  height: 50%;
+  -webkit-border-radius: 25px;
+  -moz-border-radius: 25px;
+  border-radius: 25px;
+  background: black;
+  margin: auto;
 }
