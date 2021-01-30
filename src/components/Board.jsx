@@ -1,6 +1,27 @@
 import React, { Component } from 'react';
 import Square from './Square'
-import { gameSubject } from './Game'
+import { gameSubject, movePiece, newBoard } from './Game'
+import { DndProvider } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
+
+function buildBoard(pieces) {
+    var b = []
+
+    for (let row = 7; row >= 0; row--) {
+        for (let col = 0; col <= 7; col++) {
+            var squareID = String.fromCharCode(97 + col) + (row + 1)
+
+            var piece = pieces[squareID]
+
+            var squareColor = (row + col) % 2 === 0 ? "black" : "white"
+            var pieceColor = piece == null ? "none" : piece.color
+
+            b.push({ squareID: squareID, color: squareColor, piece: pieceColor })
+        }
+    }
+
+    return b
+}
 
 // Represents a checker board
 class Board extends Component {
@@ -8,54 +29,42 @@ class Board extends Component {
         super(props);
 
         this.state = {
-            pieces: props.pieces, 
             squares: []
         }
-
-        gameSubject.subscribe((p) => {
-            this.setState({ pieces: p })
-            this.buildBoard()
-        })
     }
 
     componentDidMount() {
-        this.buildBoard()
-    }
-
-    buildBoard() {
-        var b = []
-        var p = this.state.pieces
-
-        for (let row = 7; row >= 0; row--) {
-            for (let col = 0; col <= 7; col++) {
-                var squareID = String.fromCharCode(97 + col) + (row + 1)
-
-                var piece = p[squareID]
-
-                var squareColor = (row + col) % 2 === 0 ? "black" : "white"
-                var pieceColor = piece == null ? "none" : piece.color
-
-                b.push({ squareID: squareID, color: squareColor, piece: pieceColor })
-            }
-        }
-
-        // set the board state
+        var b = newBoard()
         this.setState({
-            squares: b
+            pieces: b,
+            squares: buildBoard(b)
+        })
+
+        gameSubject.subscribe((p) => {
+            if (p != null) {
+                // set the board state
+                this.setState({
+                    pieces: p,
+                    squares: buildBoard(p)
+                })
+            }
         })
     }
 
     render() {
         return( 
-            <div className="board-container">
-                <div className="board">
-                    { 
-                        this.state.squares.map((data) => (
-                            <Square key={ data.squareID } squareID={ data.squareID } color={ data.color } piece={ data.piece }/>
-                        ))
-                    }
+            <DndProvider backend={HTML5Backend}>
+                <div className="board-container">
+                    <button onClick={ () => movePiece("a3", "b4")} >click me</button>
+                    <div className="board">
+                        { 
+                            this.state.squares.map((data) => (
+                                <Square key={ data.squareID } squareID={ data.squareID } color={ data.color } piece={ data.piece }/>
+                            ))
+                        }
+                    </div>
                 </div>
-            </div>
+            </DndProvider>
         );
     }
 }

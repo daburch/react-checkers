@@ -1,5 +1,16 @@
 import React from 'react';
+import { useDrag } from 'react-dnd'
 
-const Piece = (props) => <div className={ "circle-" + props.color } />;
- 
-export default Piece;
+export default function Piece(props) {
+    const [, drag] = useDrag({
+        item: {
+            type: 'piece',
+            pos: props.pos
+        },
+        collect: (monitor) => ({
+            isDragging: !!monitor.isDragging()
+        })
+    })
+
+    return <div className={ "piece circle-" + props.color } ref={ drag } />;
+} 

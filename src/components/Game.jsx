@@ -34,40 +34,47 @@ function updateGame(pieces) {
     gameSubject.next(pieces)
 }
 
-function newBoard() {
-    var p = new Map();
+const THA_BOARD = new Map()
 
-    p["a1"] = { color: "white" }
-    p["c1"] = { color: "white" }
-    p["e1"] = { color: "white" }
-    p["g1"] = { color: "white" }
+export function newBoard() {
+    THA_BOARD["a1"] = { color: "white" }
+    THA_BOARD["c1"] = { color: "white" }
+    THA_BOARD["e1"] = { color: "white" }
+    THA_BOARD["g1"] = { color: "white" }
 
-    p["b2"] = { color: "white" }
-    p["d2"] = { color: "white" }
-    p["f2"] = { color: "white" }
-    p["h2"] = { color: "white" }
+    THA_BOARD["b2"] = { color: "white" }
+    THA_BOARD["d2"] = { color: "white" }
+    THA_BOARD["f2"] = { color: "white" }
+    THA_BOARD["h2"] = { color: "white" }
 
-    p["a3"] = { color: "white" }
-    p["c3"] = { color: "white" }
-    p["e3"] = { color: "white" }
-    p["g3"] = { color: "white" }
+    THA_BOARD["a3"] = { color: "white" }
+    THA_BOARD["c3"] = { color: "white" }
+    THA_BOARD["e3"] = { color: "white" }
+    THA_BOARD["g3"] = { color: "white" }
 
-    p["b6"] = { color: "black" }
-    p["d6"] = { color: "black" }
-    p["f6"] = { color: "black" }
-    p["h6"] = { color: "black" }
+    THA_BOARD["b6"] = { color: "black" }
+    THA_BOARD["d6"] = { color: "black" }
+    THA_BOARD["f6"] = { color: "black" }
+    THA_BOARD["h6"] = { color: "black" }
 
-    p["a7"] = { color: "black" }
-    p["c7"] = { color: "black" }
-    p["e7"] = { color: "black" }
-    p["g7"] = { color: "black" }
+    THA_BOARD["a7"] = { color: "black" }
+    THA_BOARD["c7"] = { color: "black" }
+    THA_BOARD["e7"] = { color: "black" }
+    THA_BOARD["g7"] = { color: "black" }
 
-    p["b8"] = { color: "black" }
-    p["d8"] = { color: "black" }
-    p["f8"] = { color: "black" }
-    p["h8"] = { color: "black" }
+    THA_BOARD["b8"] = { color: "black" }
+    THA_BOARD["d8"] = { color: "black" }
+    THA_BOARD["f8"] = { color: "black" }
+    THA_BOARD["h8"] = { color: "black" }
 
-    return p
+    return THA_BOARD
+}
+
+export function movePiece(from, to) {        
+    THA_BOARD[to] = THA_BOARD[from]
+    THA_BOARD[from] = null
+    
+    updateGame(THA_BOARD)
 }
 
 class Game extends Component {
@@ -76,8 +83,7 @@ class Game extends Component {
 
         this.state = {
             gameID: 0,
-            connection: null,
-            pieces: newBoard()
+            connection: null
         }
     }
 
@@ -89,24 +95,12 @@ class Game extends Component {
         return this.state.connection != null
     }
 
-    movePiece(from, to) {        
-        var p = this.state.pieces
-        
-        var pf = p[from]
-        p[from] = null
-        p[to] = pf
-    
-        this.setState({ pieces: p })
-        updateGame(p)
-    }
-
     render() {
         return (
             <div>
                 <h1>{ this.connectedToGame() ? "Connected to game." : "Not connected to game."}</h1>
                 <div>
-                    <button onClick={ () => this.movePiece("a3", "b4") }>Click me</button>
-                    <Board pieces={ this.state.pieces }/>
+                    <Board />
                 </div>
             </div>
         )

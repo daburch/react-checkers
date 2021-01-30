@@ -1,28 +1,28 @@
-import React, { Component } from 'react';
+import React from 'react';
 import Piece from './Piece';
+import { useDrop } from 'react-dnd';
+import { movePiece } from './Game';
 
-class Square extends Component {
-    constructor(props) {
-        super(props);
-
-        this.state = { squareID: props.squareID, color: props.color, piece: props.piece };
+function buildPiece(piece, pos) {
+    if (piece === "none") {
+        return ""
     }
-
-    buildPiece() {
-        if (this.props.piece === "none") {
-            return ""
-        }
-        
-        return <Piece color={ this.props.piece } />
-    }
-
-    render() {
-        return (
-            <div id={ this.state.squareID } className={ "square square-" + this.state.color }>
-                { this.buildPiece() }
-            </div>
-        );
-    }
+    
+    return <Piece color={ piece } pos={ pos } />
 }
- 
-export default Square;
+
+export default function Square(props) {
+    const [, drop] = useDrop({
+        accept: 'piece',
+        drop: (item) => {
+            console.log("pos: " + item.pos + ", id: " + props.squareID)
+            movePiece(item.pos, props.squareID)
+        }
+    })
+
+    return (
+        <div id={ props.squareID } className={ "square square-" + props.color } ref={ drop }>
+            { buildPiece(props.piece, props.squareID) }
+        </div>
+    );
+}
