@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import Square from './Square'
+import { gameSubject } from './Game'
 
 // Represents a checker board
 class Board extends Component {
@@ -10,13 +11,18 @@ class Board extends Component {
             pieces: props.pieces, 
             squares: []
         }
+
+        gameSubject.subscribe((p) => {
+            this.setState({ pieces: p })
+            this.buildBoard()
+        })
     }
 
     componentDidMount() {
-        this.initBoard()
+        this.buildBoard()
     }
 
-    initBoard() {
+    buildBoard() {
         var b = []
         var p = this.state.pieces
 
@@ -53,5 +59,5 @@ class Board extends Component {
         );
     }
 }
- 
+
 export default Board;
