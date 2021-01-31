@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import Board from './Board'
 import { BehaviorSubject } from 'rxjs'
+import Square from './Square';
+import Piece from './Piece';
 
 export const gameSubject = new BehaviorSubject();
 
@@ -70,11 +72,50 @@ export function newBoard() {
     return THA_BOARD
 }
 
-export function movePiece(from, to) {        
-    THA_BOARD[to] = THA_BOARD[from]
-    THA_BOARD[from] = null
+export function movePiece(from, to) {
+    if (THA_BOARD[to] == null && THA_BOARD[from].color === "white" && isValidWhite(from, to)){
+        canJump(from , to)
+        THA_BOARD[to] = THA_BOARD[from]
+        THA_BOARD[from] = null        
+        
+    }
+    else if (THA_BOARD[to] == null && THA_BOARD[from].color === "black" && isValidBlack(from, to)) {
+        THA_BOARD[to] = THA_BOARD[from]
+        THA_BOARD[from] = null
+    }
     
     updateGame(THA_BOARD)
+}
+//if jumping checks to see if jump is valid
+export function canJump(from, to){
+    //variables from previous
+    var toBeJumpedCol = from[0].charCodeAt(0) - 96
+    var toBeJumpedRow = from[1].charCodeAt(0) - 48
+
+
+    console.log("col : " + toBeJumpedCol) 
+    console.log("row : " + toBeJumpedRow)
+
+}
+
+//checks if white can move to next position
+export function isValidWhite(from, to){
+    var move_valid_char = to[0].charCodeAt(0) - from[0].charCodeAt(0)
+    var move_valid_num = to[1].charCodeAt(0) - from[1].charCodeAt(0)
+    console.log("hell form white")
+    if ((move_valid_num === 1) && (move_valid_char === 1 || move_valid_char === -1)){
+        return true
+    }
+    
+}
+//checks if black can move to next position
+export function isValidBlack(from,to){
+    var move_valid_char = to[0].charCodeAt(0) - from[0].charCodeAt(0)
+    var move_valid_num = to[1].charCodeAt(0) - from[1].charCodeAt(0)
+    console.log("hell form black")
+    if ((move_valid_num === -1) && (move_valid_char === 1 || move_valid_char === -1)){
+        return true
+    }
 }
 
 class Game extends Component {
