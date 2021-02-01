@@ -1,7 +1,6 @@
 import React from 'react';
 import Piece from './Piece';
 import { useDrop } from 'react-dnd';
-import { sendMoveToServer } from './Game';
 
 function buildPiece(piece, pos) {
     if (piece === "none") {
@@ -15,7 +14,7 @@ export default function Square(props) {
     const [, drop] = useDrop({
         accept: 'piece',
         drop: (item) => {
-            sendMoveToServer(item.pos, props.squareID, true)
+            props.sendMoveToServer(item.pos, props.squareID)
         }
     })
 

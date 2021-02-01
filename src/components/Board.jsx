@@ -56,9 +56,9 @@ class Board extends Component {
             <DndProvider backend={HTML5Backend}>
                 <div className="board-container">
                     <div className="board">
-                        { 
+                        {
                             this.state.squares.map((data) => (
-                                <Square key={ data.squareID } squareID={ data.squareID } color={ data.color } piece={ data.piece }/>
+                                <Square key={ data.squareID } squareID={ data.squareID } color={ data.color } piece={ data.piece } sendMoveToServer={ this.props.sendMoveToServer } />
                             ))
                         }
                     </div>

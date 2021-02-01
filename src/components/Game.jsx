@@ -5,42 +5,6 @@ import SideBar from './SideBar';
 
 export const gameSubject = new BehaviorSubject();
 const THA_BOARD = new Map()
-var gameConnection;
-
-function connectToGame(game) {
-    var gameServerIP = "ws://localhost:8080/ws"
-
-    let socket = new WebSocket(gameServerIP)
-    console.log("connecting to game...")
-
-    socket.onopen = () => {
-        console.log("connected to game.")
-    }
-
-    socket.onclose = (event) => {
-        console.log("Disconnected from game.")
-    }
-
-    socket.onmessage = (message) => {
-        console.log(message)
-
-        var data = JSON.parse(message.data)
-        var body = JSON.parse(data.body)
-
-        if (body.action === "move") {
-            console.log("got a move message.")
-            movePiece(body.from, body.to, false)
-        } else if (body.action === "assignColor") {
-            game.setState( { playerColor: body.color } )
-        }
-    }
-
-    socket.onerror = (error) => {
-        console.log("error:", error)
-    }
-
-    return socket
-}
 
 function updateGame(pieces) {
     gameSubject.next(pieces)
@@ -80,15 +44,10 @@ export function newBoard() {
     return THA_BOARD
 }
 
-export function sendMoveToServer(from, to) {
-    gameConnection.send(`{ "action": "move", "from": "${from}", "to": "${to}"}`)
-}
-
 export function movePiece(from, to) {
     if (THA_BOARD[from] != null && THA_BOARD[to] == null  && isValid(from, to)){
         THA_BOARD[to] = THA_BOARD[from]
         THA_BOARD[from] = null        
-        
     }
     
     updateGame(THA_BOARD)
@@ -111,21 +70,68 @@ class Game extends Component {
         super(props);
 
         this.state = {
-            gameID: 0
+            gameID: 0,
+            gameConnection: null,
+            playerColor: null
         }
     }
 
-    componentDidMount() {
-        if (gameConnection == null) {
-            gameConnection = connectToGame(this)
+    connect() {
+        if (this.state.gameConnection != null) {
+            return
+        }
+
+        var gameServerIP = "ws://localhost:8080/ws"
+
+        let socket = new WebSocket(gameServerIP)
+        console.log("connecting to game...")
+    
+        socket.onopen = () => {
+            console.log("connected to game.")
+        }
+    
+        socket.onclose = (event) => {
+            console.log("Disconnected from game.")
+        }
+    
+        socket.onmessage = (message) => {
+            console.log(message)
+    
+            var data = JSON.parse(message.data)
+            var body = JSON.parse(data.body)
+    
+            if (body.action === "move") {
+                movePiece(body.from, body.to, false)
+            } else if (body.action === "assignColor") {
+                this.setState( { playerColor: body.color } )
+            }
+        }
+    
+        socket.onerror = (error) => {
+            console.log("error:", error)
+        }
+    
+        this.setState({ gameConnection: socket })
+    }
+
+    disconnect() {
+        if (this.state.gameConnection != null) {
+            this.state.gameConnection.close()
+            this.setState({ gameConnection: null, playerColor: null })
+        }
+    }
+
+    sendMoveToServer(from, to) {
+        if (this.state.gameConnection != null) {
+            this.state.gameConnection.send(`{ "action": "move", "from": "${from}", "to": "${to}"}`)
         }
     }
 
     render() {
         return (
             <div className="game">
-                <SideBar />
-                <Board />
+                <SideBar connected={ this.state.gameConnection != null } playerColor={ this.state.playerColor } connect={ this.connect.bind(this) } disconnect={ this.disconnect.bind(this) }/>
+                <Board sendMoveToServer={ this.sendMoveToServer.bind(this) } />
             </div>
         )
     }
