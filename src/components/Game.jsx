@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
 import Board from './Board'
 import { BehaviorSubject } from 'rxjs'
-import Square from './Square';
-import Piece from './Piece';
+import SideBar from './SideBar';
 
 export const gameSubject = new BehaviorSubject();
+const THA_BOARD = new Map()
+var gameConnection;
 
-function connectToGame() {
+function connectToGame(game) {
     var gameServerIP = "ws://localhost:8080/ws"
 
     let socket = new WebSocket(gameServerIP)
@@ -14,7 +15,6 @@ function connectToGame() {
 
     socket.onopen = () => {
         console.log("connected to game.")
-        socket.send("Hello.")
     }
 
     socket.onclose = (event) => {
@@ -23,6 +23,16 @@ function connectToGame() {
 
     socket.onmessage = (message) => {
         console.log(message)
+
+        var data = JSON.parse(message.data)
+        var body = JSON.parse(data.body)
+
+        if (body.action === "move") {
+            console.log("got a move message.")
+            movePiece(body.from, body.to, false)
+        } else if (body.action === "assignColor") {
+            game.setState( { playerColor: body.color } )
+        }
     }
 
     socket.onerror = (error) => {
@@ -35,8 +45,6 @@ function connectToGame() {
 function updateGame(pieces) {
     gameSubject.next(pieces)
 }
-
-const THA_BOARD = new Map()
 
 export function newBoard() {
     THA_BOARD["a1"] = { color: "white" }
@@ -72,6 +80,10 @@ export function newBoard() {
     return THA_BOARD
 }
 
+export function sendMoveToServer(from, to) {
+    gameConnection.send(`{ "action": "move", "from": "${from}", "to": "${to}"}`)
+}
+
 export function movePiece(from, to) {
     if (THA_BOARD[from] != null && THA_BOARD[to] == null  && isValid(from, to)){
         THA_BOARD[to] = THA_BOARD[from]
@@ -99,26 +111,21 @@ class Game extends Component {
         super(props);
 
         this.state = {
-            gameID: 0,
-            connection: null
+            gameID: 0
         }
     }
 
     componentDidMount() {
-        this.setState({ connection: connectToGame() })
-    }
-
-    connectedToGame() {
-        return this.state.connection != null
+        if (gameConnection == null) {
+            gameConnection = connectToGame(this)
+        }
     }
 
     render() {
         return (
-            <div>
-                <h1>{ this.connectedToGame() ? "Connected to game." : "Not connected to game."}</h1>
-                <div>
-                    <Board />
-                </div>
+            <div className="game">
+                <SideBar />
+                <Board />
             </div>
         )
     }
