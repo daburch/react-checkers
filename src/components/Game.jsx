@@ -82,14 +82,14 @@ export function movePiece(from, to) {
     updateGame(THA_BOARD)
 }
 
-//checks if white can move to next position
+//checks if move is valid
 export function isValid(from, to){
-    var rowDist = to[0].charCodeAt(0) - from[0].charCodeAt(0)
-    var colDist = to[1].charCodeAt(0) - from[1].charCodeAt(0)
-    if (THA_BOARD[from].color === "white" && (colDist === 1) && (rowDist === 1 || rowDist === -1)){
+    var colDist = to[0].charCodeAt(0) - from[0].charCodeAt(0)
+    var rowDist = to[1].charCodeAt(0) - from[1].charCodeAt(0)
+    if (THA_BOARD[from].color === "white" && (rowDist === 1) && (colDist === 1 || colDist === -1)){
         return true
     }
-    if (THA_BOARD[from].color === "black" && (colDist === -1) && (rowDist === 1 || rowDist === -1)){
+    if (THA_BOARD[from].color === "black" && (rowDist === -1) && (colDist === 1 || colDist === -1)){
         return true
     }   
 }
