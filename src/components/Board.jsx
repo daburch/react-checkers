@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import Square from './Square'
-import { gameSubject, movePiece, newBoard } from './Game'
+import { gameSubject, newBoard } from './Game'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 
@@ -55,7 +55,6 @@ class Board extends Component {
         return( 
             <DndProvider backend={HTML5Backend}>
                 <div className="board-container">
-                    <button onClick={ () => movePiece("a3", "b4")} >click me</button>
                     <div className="board">
                         { 
                             this.state.squares.map((data) => (
