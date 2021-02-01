@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import Board from './Board'
 import { BehaviorSubject } from 'rxjs'
+import Square from './Square';
+import Piece from './Piece';
 
 export const gameSubject = new BehaviorSubject();
 
@@ -70,11 +72,26 @@ export function newBoard() {
     return THA_BOARD
 }
 
-export function movePiece(from, to) {        
-    THA_BOARD[to] = THA_BOARD[from]
-    THA_BOARD[from] = null
+export function movePiece(from, to) {
+    if (THA_BOARD[from] != null && THA_BOARD[to] == null  && isValid(from, to)){
+        THA_BOARD[to] = THA_BOARD[from]
+        THA_BOARD[from] = null        
+        
+    }
     
     updateGame(THA_BOARD)
+}
+
+//checks if move is valid
+export function isValid(from, to){
+    var colDist = to[0].charCodeAt(0) - from[0].charCodeAt(0)
+    var rowDist = to[1].charCodeAt(0) - from[1].charCodeAt(0)
+    if (THA_BOARD[from].color === "white" && (rowDist === 1) && (colDist === 1 || colDist === -1)){
+        return true
+    }
+    if (THA_BOARD[from].color === "black" && (rowDist === -1) && (colDist === 1 || colDist === -1)){
+        return true
+    }   
 }
 
 class Game extends Component {
