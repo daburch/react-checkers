@@ -51,6 +51,10 @@ class Board extends Component {
         })
     }
 
+    getSquares(reversed) {
+        return reversed ? this.state.squares.reverse() : this.state.squares
+    }
+
     render() {
         return( 
             <DndProvider backend={HTML5Backend}>
@@ -60,9 +64,9 @@ class Board extends Component {
                     </div>
                     <div className="board">
                         {
-                            this.state.squares.map((data) => (
+                            this.getSquares(this.props.isReversed).map((data) => (
                                 <Square key={ data.squareID } squareID={ data.squareID } color={ data.color } piece={ data.piece } sendMoveToServer={ this.props.sendMoveToServer } />
-                            ))
+                            )) 
                         }
                     </div>
                     <div style={{ position: "absolute", bottom: 0 }}>
