@@ -4,65 +4,45 @@ import { BehaviorSubject } from 'rxjs'
 import SideBar from './SideBar';
 
 export const gameSubject = new BehaviorSubject();
-const THA_BOARD = new Map()
 
 function updateGame(pieces) {
     gameSubject.next(pieces)
 }
 
 export function newBoard() {
-    THA_BOARD["a1"] = { color: "white" }
-    THA_BOARD["c1"] = { color: "white" }
-    THA_BOARD["e1"] = { color: "white" }
-    THA_BOARD["g1"] = { color: "white" }
+    var b = new Map()
 
-    THA_BOARD["b2"] = { color: "white" }
-    THA_BOARD["d2"] = { color: "white" }
-    THA_BOARD["f2"] = { color: "white" }
-    THA_BOARD["h2"] = { color: "white" }
+    b["a1"] = { color: "white" }
+    b["c1"] = { color: "white" }
+    b["e1"] = { color: "white" }
+    b["g1"] = { color: "white" }
 
-    THA_BOARD["a3"] = { color: "white" }
-    THA_BOARD["c3"] = { color: "white" }
-    THA_BOARD["e3"] = { color: "white" }
-    THA_BOARD["g3"] = { color: "white" }
+    b["b2"] = { color: "white" }
+    b["d2"] = { color: "white" }
+    b["f2"] = { color: "white" }
+    b["h2"] = { color: "white" }
 
-    THA_BOARD["b6"] = { color: "black" }
-    THA_BOARD["d6"] = { color: "black" }
-    THA_BOARD["f6"] = { color: "black" }
-    THA_BOARD["h6"] = { color: "black" }
+    b["a3"] = { color: "white" }
+    b["c3"] = { color: "white" }
+    b["e3"] = { color: "white" }
+    b["g3"] = { color: "white" }
 
-    THA_BOARD["a7"] = { color: "black" }
-    THA_BOARD["c7"] = { color: "black" }
-    THA_BOARD["e7"] = { color: "black" }
-    THA_BOARD["g7"] = { color: "black" }
+    b["b6"] = { color: "black" }
+    b["d6"] = { color: "black" }
+    b["f6"] = { color: "black" }
+    b["h6"] = { color: "black" }
 
-    THA_BOARD["b8"] = { color: "black" }
-    THA_BOARD["d8"] = { color: "black" }
-    THA_BOARD["f8"] = { color: "black" }
-    THA_BOARD["h8"] = { color: "black" }
+    b["a7"] = { color: "black" }
+    b["c7"] = { color: "black" }
+    b["e7"] = { color: "black" }
+    b["g7"] = { color: "black" }
 
-    return THA_BOARD
-}
+    b["b8"] = { color: "black" }
+    b["d8"] = { color: "black" }
+    b["f8"] = { color: "black" }
+    b["h8"] = { color: "black" }
 
-export function movePiece(from, to) {
-    if (THA_BOARD[from] != null && THA_BOARD[to] == null  && isValid(from, to)){
-        THA_BOARD[to] = THA_BOARD[from]
-        THA_BOARD[from] = null        
-    }
-    
-    updateGame(THA_BOARD)
-}
-
-//checks if move is valid
-export function isValid(from, to){
-    var colDist = to[0].charCodeAt(0) - from[0].charCodeAt(0)
-    var rowDist = to[1].charCodeAt(0) - from[1].charCodeAt(0)
-    if (THA_BOARD[from].color === "white" && (rowDist === 1) && (colDist === 1 || colDist === -1)){
-        return true
-    }
-    if (THA_BOARD[from].color === "black" && (rowDist === -1) && (colDist === 1 || colDist === -1)){
-        return true
-    }   
+    return b
 }
 
 class Game extends Component {
@@ -72,19 +52,22 @@ class Game extends Component {
         this.state = {
             gameID: 0,
             gameConnection: null,
-            playerColor: null
+            playerColor: null,
+            board: new newBoard(),
         }
     }
 
     connect() {
         if (this.state.gameConnection != null) {
+            // console.debug("already connected")
             return
         }
+
+        console.log("connecting to game...")
 
         var gameServerIP = "ws://localhost:8080/ws"
 
         let socket = new WebSocket(gameServerIP)
-        console.log("connecting to game...")
     
         socket.onopen = () => {
             console.log("connected to game.")
@@ -101,7 +84,7 @@ class Game extends Component {
             var body = JSON.parse(data.body)
     
             if (body.action === "move") {
-                movePiece(body.from, body.to, false)
+                this.movePiece(body.from, body.to)
             } else if (body.action === "assignColor") {
                 this.setState( { playerColor: body.color } )
             }
@@ -123,15 +106,41 @@ class Game extends Component {
 
     sendMoveToServer(from, to) {
         if (this.state.gameConnection != null) {
-            this.state.gameConnection.send(`{ "action": "move", "from": "${from}", "to": "${to}"}`)
+            if (this.isValid(from, to)) {
+                this.state.gameConnection.send(`{ "action": "move", "from": "${from}", "to": "${to}"}`)
+            } else {
+                console.debug("Invalid move")
+            }
         }
+    }
+
+    movePiece(from, to) {
+        var b = this.state.board
+
+        b[to] = b[from]
+        b[from] = null
+
+        updateGame(b)
+    }
+
+    isValid(from, to){
+        var colDist = to[0].charCodeAt(0) - from[0].charCodeAt(0)
+        var rowDist = to[1].charCodeAt(0) - from[1].charCodeAt(0)
+        var b = this.state.board
+
+        return (b[from] != null &&                                  // source square has a piece
+                b[to] == null &&                                    // target square is empty
+                b[from].color === this.state.playerColor &&         // can only move assigned pieces
+                (colDist === 1 || colDist === -1) &&                // 1 space left/right
+                ((b[from].color === "white" && rowDist === 1) ||    // white can only move 1 -> 8 by one space
+                (b[from].color === "black" && rowDist === -1)))     // black can only move 8 -> 1 by one space
     }
 
     render() {
         return (
             <div className="game">
                 <SideBar connected={ this.state.gameConnection != null } playerColor={ this.state.playerColor } connect={ this.connect.bind(this) } disconnect={ this.disconnect.bind(this) }/>
-                <Board sendMoveToServer={ this.sendMoveToServer.bind(this) } />
+                <Board isReversed={ this.state.playerColor === "black" } sendMoveToServer={ this.sendMoveToServer.bind(this) } />
             </div>
         )
     }
