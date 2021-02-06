@@ -51,6 +51,7 @@ class Game extends Component {
 
         this.state = {
             gameID: 0,
+            turn: 0,
             gameConnection: null,
             playerColor: null,
             board: new newBoard(),
@@ -59,7 +60,7 @@ class Game extends Component {
 
     connect() {
         if (this.state.gameConnection != null) {
-            // console.debug("already connected")
+            console.debug("already connected")
             return
         }
 
@@ -120,6 +121,8 @@ class Game extends Component {
         b[to] = b[from]
         b[from] = null
 
+        this.setState({ turn: this.state.turn + 1 })
+
         updateGame(b)
     }
 
@@ -128,7 +131,8 @@ class Game extends Component {
         var rowDist = to[1].charCodeAt(0) - from[1].charCodeAt(0)
         var b = this.state.board
 
-        return (b[from] != null &&                                  // source square has a piece
+        return (this.isTurn() &&                                    // can only move on correct turn
+                b[from] != null &&                                  // source square has a piece
                 b[to] == null &&                                    // target square is empty
                 b[from].color === this.state.playerColor &&         // can only move assigned pieces
                 (colDist === 1 || colDist === -1) &&                // 1 space left/right
@@ -136,10 +140,18 @@ class Game extends Component {
                 (b[from].color === "black" && rowDist === -1)))     // black can only move 8 -> 1 by one space
     }
 
+    isTurn() {
+        if (this.state.playerColor === "white") {
+            return this.state.turn % 2 === 0
+        } else {
+            return this.state.turn % 2 === 1
+        }
+    }
+
     render() {
         return (
             <div className="game">
-                <SideBar connected={ this.state.gameConnection != null } playerColor={ this.state.playerColor } connect={ this.connect.bind(this) } disconnect={ this.disconnect.bind(this) }/>
+                <SideBar connected={ this.state.gameConnection != null } playerColor={ this.state.playerColor } isTurn={ this.isTurn() } connect={ this.connect.bind(this) } disconnect={ this.disconnect.bind(this) }/>
                 <Board isReversed={ this.state.playerColor === "black" } sendMoveToServer={ this.sendMoveToServer.bind(this) } />
             </div>
         )

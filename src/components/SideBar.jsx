@@ -1,6 +1,6 @@
 import React from 'react';
 
-function buildStatus(props) {
+function buildConnectionStatus(props) {
     if (props.connected) {
         if (props.playerColor == null) {
             return <p>Waiting for opponent...</p>
@@ -9,6 +9,16 @@ function buildStatus(props) {
         }
     } else {
         return <p>You are not connected.</p>
+    }
+}
+
+function buildTurnStatus(props) {
+    if (!props.connected || props.playerColor == null) {
+        return ""
+    } else if (props.isTurn) {
+        return <p>It is your turn</p>
+    } else {
+        return <p>It is Opponent's turn</p>
     }
 }
 
@@ -22,7 +32,8 @@ function buildButton(props) {
 
 export default function SideBar(props) {
     return <div className="sidebar">
-        { buildStatus(props) }
+        { buildConnectionStatus(props) }
+        { buildTurnStatus(props) }
         { buildButton(props) }
     </div>
 }
