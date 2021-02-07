@@ -64,6 +64,10 @@ main {
   background: #f0d9b5;
 }
 
+.king {
+  box-shadow: 0 0 3pt 2pt red;
+}
+
 .circle-white {
   width: 50%;
   height: 50%;

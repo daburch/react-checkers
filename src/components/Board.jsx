@@ -16,7 +16,7 @@ function buildBoard(pieces) {
             var squareColor = (row + col) % 2 === 0 ? "black" : "white"
             var pieceColor = piece == null ? "none" : piece.color
 
-            b.push({ squareID: squareID, color: squareColor, piece: pieceColor })
+            b.push({ squareID: squareID, color: squareColor, pieceColor: pieceColor, piece: piece })
         }
     }
 
@@ -65,7 +65,7 @@ class Board extends Component {
                     <div className="board">
                         {
                             this.getSquares(this.props.isReversed).map((data) => (
-                                <Square key={ data.squareID } squareID={ data.squareID } color={ data.color } piece={ data.piece } sendMoveToServer={ this.props.sendMoveToServer } />
+                                <Square key={ data.squareID } squareID={ data.squareID } color={ data.color } pieceColor={ data.pieceColor } piece={ data.piece } sendMoveToServer={ this.props.sendMoveToServer } />
                             )) 
                         }
                     </div>
