@@ -127,12 +127,16 @@ class Game extends Component {
     disconnect() {
         if (this.state.gameConnection != null) {
             this.state.gameConnection.close()
-            this.setState({ gameConnection: null, playerColor: null })
+            this.setState({ status: "disconnected", gameConnection: null, playerColor: null })
         }
     }
 
     connected() {
         return this.state.gameConnection != null
+    }
+
+    gameIsActive() {
+        return this.state.status === "in-progress"
     }
 
     sendMoveToServer(from, to) {
@@ -141,21 +145,42 @@ class Game extends Component {
             return
         }
 
+        if (!this.gameIsActive()) {
+            console.log("Can't send move: Game is not active")
+            return
+        }
+
         if (!this.isTurn()) {
             console.log("Can't send move: Not your turn.")
             return
         }
 
-        const [valid, reason] = this.moveIsValid(from, to)
+        const [valid, reason, isJump] = this.moveIsValid(from, to)
         if (!valid) {
             console.log(`invalid move: ${from} => ${to} : ${reason}`)
             return
         }
 
+        if (isJump !== this.playerCanJump()) {
+            console.log(`invalid move: ${from} => ${to} : Must take jump`)
+            return
+        }
+
+        // game and move are valid; Send the move to the game server
         this.state.gameConnection.send(`{ "action": "move", "from": "${from}", "to": "${to}" }`)
     }
 
     surrender() {
+        if (!this.connected()) {
+            console.log("Can't surrender: Not connected to server")
+            return
+        }
+
+        if (!this.gameIsActive()) {
+            console.log("Can't surrender: Game is not active")
+            return
+        }
+
         var winner = this.state.playerColor === "white" ? "black" : "white"
         this.sendStatusUpdateToServer(`win ${winner}`)
     }
@@ -170,13 +195,24 @@ class Game extends Component {
     }
 
     movePiece(from, to) {
-        var b = this.state.board
+        const [, fCol, fRow] = validateCell(from)
+        const [, tCol, tRow] = validateCell(to)
 
+        // column and row deltas
+        var cDelta = tCol - fCol
+        var rDelta = tRow - fRow
+
+        var b = this.state.board
         b[to] = b[from]
         delete b[from]
 
+        // move is a jump
+        if ((cDelta === 2 || cDelta === -2) && (rDelta === 2 || rDelta === -2)) {
+            var attackedCell = String.fromCharCode(97 + fCol + (cDelta / 2)) + (fRow + (rDelta / 2))
+            delete b[attackedCell]
+        }
+
         // promote king
-        const [, , tRow] = validateCell(to)
         if (tRow === 8 && b[to].color === "white") {
             b[to].isKing = true
         } else if (tRow === 1 && b[to].color === "black") {
@@ -190,24 +226,29 @@ class Game extends Component {
 
     incrementTurn() {
         this.setState({ turn: this.state.turn + 1 })
-        console.log(`turn: ${this.state.turn}`)
-        if (!this.playerHasValidMove()) {
+        if (!this.playerCanMove()) {
             console.log("game over.")
             this.surrender()
         }
     }
 
-    // check if the current player could make move the piece from b.[from] to b.[to]
+    /**
+     * Check if the given move is valid.
+     * 
+     * @param {Number} from source cell
+     * @param {Number} to   target cell
+     * @returns {Array} boolean indicating if the move is valid, string indicating the reason the move is invalid, boolean indicating if the move is a jump
+     */
     moveIsValid(from, to) {
         const [fValid, fCol, fRow] = validateCell(from)
         const [tValid, tCol, tRow] = validateCell(to)
 
         if (!fValid) {
-            return [ false, "from cell out of range" ]
+            return [ false, "from cell out of range", false ]
         }
 
         if (!tValid) {
-            return [ false, "to cell out of range" ]
+            return [ false, "to cell out of range", false ]
         }
 
         var b = this.state.board
@@ -215,35 +256,58 @@ class Game extends Component {
         // source square must have a piece and that piece must match the player color
         var piece = b[from]
         if (piece == null) {
-            return [ false, "no piece to move" ]
+            return [ false, "no piece to move", false ]
         }
 
+        // piece must belong to the active player
         if (piece.color !== this.state.playerColor) {
-            return [ false, "wrong color piece" ]
+            return [ false, "wrong color piece", false ]
         }
 
         // target square must be empty
         if (b[to] != null) {
-            return [ false, "target cell not empty" ]
+            return [ false, "target cell not empty", false ]
         }
 
         // column and row deltas
         var cDelta = tCol - fCol
         var rDelta = tRow - fRow
+
+        // move is a jump
+        if ((cDelta === 2 || cDelta === -2) && (rDelta === 2 || rDelta === -2)) {
+            var intermediateCell = String.fromCharCode(97 + fCol + (cDelta / 2)) + (fRow + (rDelta / 2))
+            var attackedPiece = b[intermediateCell]
+
+            // must be jumping an enemy piece
+            if (attackedPiece == null) {
+                return [ false, "can't jump empty square", true ]
+            } else if (attackedPiece.color === this.state.playerColor) {
+                return [ false, "can't jump friendly piece", true ]
+            }
+
+            if (!piece.isKing) {
+                // white can only jump 1 -> 8 by two spaces
+                // black can only jump 8 -> 1 by two spaces
+                return [ ((piece.color === "white" && rDelta === 2) ||                            
+                            (piece.color === "black" && rDelta === -2)), "invalid row delta", true ]
+            } else {
+                return [ true, "", true ]
+            }
+        }
         
         // can only move 1 space left / right unless jumping
         if (!(cDelta === 1 || cDelta === -1)) {
-            return [ false, "invalid column delta" ]
+            return [ false, "invalid column delta", false ]
         }
 
         if (piece.isKing) {
             // kings can move in either direction
-            return [ (rDelta === 1 || rDelta === -1), "invalid row delta" ]
+            return [ (rDelta === 1 || rDelta === -1), "invalid row delta", false ]
         } else {
             // white can only move 1 -> 8 by one space
             // black can only move 8 -> 1 by one space
             return [ ((piece.color === "white" && rDelta === 1) ||                            
-                        (piece.color === "black" && rDelta === -1)), "invalid row delta" ]
+                        (piece.color === "black" && rDelta === -1)), "invalid row delta", false ]
         }
     }
 
@@ -255,13 +319,13 @@ class Game extends Component {
         }
     }
 
-    playerHasValidMove() {
+    playerCanMove() {
         if (!this.isTurn()) {
             return true
         }
 
         for (let loc in this.state.board) {
-            if (this.pieceHasValidMove(this.state.board[loc], loc)) {
+            if (this.pieceCanMove(this.state.board[loc], loc)) {
                 return true
             }
         }
@@ -269,19 +333,45 @@ class Game extends Component {
         return false
     }
 
-    pieceHasValidMove(piece, location) {
+    playerCanJump() {
+        if (!this.isTurn()) {
+            return true
+        }
+
+        for (let loc in this.state.board) {
+            if (this.pieceCanJump(this.state.board[loc], loc)) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    pieceCanMove(piece, location) {
         if (piece.color !== this.state.playerColor) {
             return false
         }
 
-        var ps = this.getPossibleSquares(location)
+        var ps = this.getPossibleMoves(location)
         return ps.some(function(value, index, array) {
             const [isValid, ] = this.moveIsValid(location, value)
             return isValid
         }.bind(this))
     }
 
-    getPossibleSquares(location) {
+    pieceCanJump(piece, location) {
+        if (piece.color !== this.state.playerColor) {
+            return false
+        }
+
+        var ps = this.getPossibleJumps(location)
+        return ps.some(function(value, index, array) {
+            const [isValid, ] = this.moveIsValid(location, value)
+            return isValid
+        }.bind(this))
+    }
+
+    getPossibleMoves(location) {
         const [valid, col, row] = validateCell(location)
         if (!valid) {
             return []
@@ -305,8 +395,39 @@ class Game extends Component {
         }
 
         if (col > 0 && row > 0) {
-            // -1, -1
+            // down-left: -1, -1
             ps.push(String.fromCharCode(97 + col - 1) + (row - 1))
+        }
+
+        return ps
+    }
+
+    getPossibleJumps(location) {
+        const [valid, col, row] = validateCell(location)
+        if (!valid) {
+            return []
+        }
+
+        var ps = []
+
+        if (col < 6 && row < 6) {
+            // up-right jump: 2, 2
+            ps.push(String.fromCharCode(97 + col + 2) + (row + 2))
+        }
+
+        if (col > 1 && row < 6) {
+            // up-left jump: -2, 2
+            ps.push(String.fromCharCode(97 + col - 2) + (row + 2))
+        }
+
+        if (col < 6 && row > 1) {
+            // down-right jump: 2, -2
+            ps.push(String.fromCharCode(97 + col + 2) + (row - 2))
+        }
+
+        if (col > 1 && row > 1) {
+            // down-left jump: -1, -1
+            ps.push(String.fromCharCode(97 + col - 2) + (row - 2))
         }
 
         return ps
