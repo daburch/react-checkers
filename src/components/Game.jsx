@@ -9,9 +9,10 @@ function updateGame(pieces) {
     gameSubject.next(pieces)
 }
 
-function validateCell(cell) {
-    var c = cell[0].charCodeAt(0) - 97
-    var r = cell[1].charCodeAt(0) - 48
+// determine if a given cellID falls within board constraints
+function validateCell(cellID) {
+    var c = cellID[0].charCodeAt(0) - 97
+    var r = cellID[1].charCodeAt(0) - 48
     var v = !(c < 0 || c > 7 || r < 0 || r > 7)
 
     return [v, c, r]
@@ -20,35 +21,35 @@ function validateCell(cell) {
 export function newBoard() {
     var b = {}
 
-    b["a1"] = { color: "white" }
-    b["c1"] = { color: "white" }
-    b["e1"] = { color: "white" }
-    b["g1"] = { color: "white" }
+    b["a1"] = { color: "white", isKing: true }
+    b["c1"] = { color: "white", isKing: false }
+    b["e1"] = { color: "white", isKing: false }
+    b["g1"] = { color: "white", isKing: false }
 
-    b["b2"] = { color: "white" }
-    b["d2"] = { color: "white" }
-    b["f2"] = { color: "white" }
-    b["h2"] = { color: "white" }
+    b["b2"] = { color: "white", isKing: false }
+    b["d2"] = { color: "white", isKing: false }
+    b["f2"] = { color: "white", isKing: false }
+    b["h2"] = { color: "white", isKing: false }
 
-    b["a3"] = { color: "white" }
-    b["c3"] = { color: "white" }
-    b["e3"] = { color: "white" }
-    b["g3"] = { color: "white" }
+    b["a3"] = { color: "white", isKing: false }
+    b["c3"] = { color: "white", isKing: false }
+    b["e3"] = { color: "white", isKing: false }
+    b["g3"] = { color: "white", isKing: false }
 
-    b["b6"] = { color: "black" }
-    b["d6"] = { color: "black" }
-    b["f6"] = { color: "black" }
-    b["h6"] = { color: "black" }
+    b["b6"] = { color: "black", isKing: false }
+    b["d6"] = { color: "black", isKing: false }
+    b["f6"] = { color: "black", isKing: false }
+    b["h6"] = { color: "black", isKing: false }
 
-    b["a7"] = { color: "black" }
-    b["c7"] = { color: "black" }
-    b["e7"] = { color: "black" }
-    b["g7"] = { color: "black" }
+    b["a7"] = { color: "black", isKing: false }
+    b["c7"] = { color: "black", isKing: false }
+    b["e7"] = { color: "black", isKing: false }
+    b["g7"] = { color: "black", isKing: false }
 
-    b["b8"] = { color: "black" }
-    b["d8"] = { color: "black" }
-    b["f8"] = { color: "black" }
-    b["h8"] = { color: "black" }
+    b["b8"] = { color: "black", isKing: false }
+    b["d8"] = { color: "black", isKing: false }
+    b["f8"] = { color: "black", isKing: false }
+    b["h8"] = { color: "black", isKing: false }
 
     return b
 }
@@ -120,16 +121,27 @@ class Game extends Component {
         }
     }
 
+    connected() {
+        return this.state.gameConnection != null
+    }
+
     sendMoveToServer(from, to) {
-        if (this.state.gameConnection != null) {
-            if (this.moveIsValid(from, to)) {
-                this.state.gameConnection.send(`{ "action": "move", "from": "${from}", "to": "${to}" }`)
-            } else {
-                console.debug("Invalid move")
-            }
-        } else {
-            console.debug("not connected to server")
+        if (!this.connected()) {
+            console.log("Can't send move: Not connected to server")
+            return
         }
+
+        if (!this.isTurn()) {
+            console.log("Can't send move: Not your turn.")
+            return
+        }
+
+        if (!this.moveIsValid(from, to)) {
+            console.log("Can't send move: Invalid move.")
+            return
+        }
+
+        this.state.gameConnection.send(`{ "action": "move", "from": "${from}", "to": "${to}" }`)
     }
 
     surrender() {
@@ -138,11 +150,12 @@ class Game extends Component {
     }
 
     sendStatusUpdateToServer(status) {
-        if (this.state.gameConnection != null) {
-            this.state.gameConnection.send(`{ "action": "updateStatus", "status": "${status}" }`)
-        } else {
-            console.debug("not connected to server")
+        if (!this.connected()) {
+            console.log("Can't update status: Not connected to server")
+            return
         }
+
+        this.state.gameConnection.send(`{ "action": "updateStatus", "status": "${status}" }`)
     }
 
     movePiece(from, to) {
@@ -164,6 +177,7 @@ class Game extends Component {
         }
     }
 
+    // check if the current player could make move the piece from b.[from] to b.[to]
     moveIsValid(from, to) {
         const [fValid, fCol, fRow] = validateCell(from)
         const [tValid, tCol, tRow] = validateCell(to)
@@ -173,17 +187,35 @@ class Game extends Component {
             return false
         }
 
-        var cDelta = tCol - fCol
-        var rDelta = tRow - fRow
         var b = this.state.board
 
-        return (this.isTurn() &&                                    // can only move on correct turn
-                b[from] != null &&                                  // source square has a piece
-                b[to] == null &&                                    // target square is empty
-                b[from].color === this.state.playerColor &&         // can only move assigned pieces
-                (cDelta === 1 || cDelta === -1) &&                  // 1 space left/right
-                ((b[from].color === "white" && rDelta === 1) ||     // white can only move 1 -> 8 by one space
-                (b[from].color === "black" && rDelta === -1)))      // black can only move 8 -> 1 by one space
+        // source square must have a piece and that piece must match the player color
+        var piece = b[from]
+        if (piece == null || piece.color !== this.state.playerColor) {
+            return false
+        }
+
+        // target square must be empty
+        if (b[to] != null) {
+            return false
+        }
+
+        // column and row deltas
+        var cDelta = tCol - fCol
+        var rDelta = tRow - fRow
+        
+        // can only move 1 space left / right unless jumping
+        if (!(cDelta === 1 || cDelta === -1)) {
+            return false
+        }
+
+        if (piece.isKing) {
+            // kings can move in either direction
+            return rDelta === 1 || rDelta === -1
+        } else {
+            return  (piece.color === "white" && rDelta === 1) ||    // white can only move 1 -> 8 by one space
+                    (piece.color === "black" && rDelta === -1)      // black can only move 8 -> 1 by one space
+        }
     }
 
     isTurn() {

@@ -3,11 +3,11 @@ import Piece from './Piece';
 import { useDrop } from 'react-dnd';
 
 function buildPiece(piece, pos) {
-    if (piece === "none") {
+    if (piece == null) {
         return ""
     }
     
-    return <Piece color={ piece } pos={ pos } />
+    return <Piece color={ piece.color } pos={ pos } isKing={ piece.isKing } />
 }
 
 export default function Square(props) {

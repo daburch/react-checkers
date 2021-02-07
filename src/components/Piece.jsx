@@ -12,5 +12,5 @@ export default function Piece(props) {
         })
     })
 
-    return <div className={ "piece circle-" + props.color } ref={ drag } />;
-} 
+    return <div className={ "piece circle-" + props.color + (props.isKing ? " king" : "") } ref={ drag } />;
+}
