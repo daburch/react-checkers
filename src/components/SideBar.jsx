@@ -32,9 +32,9 @@ function buildTurnStatus(props) {
     } else if (props.gameStatus === "draw") {
         return <p>Game Over: Draw.</p>
     } else if (props.isTurn) {
-        return <p>It is your turn</p>
+        return <p>{`Turn ${props.turn}: It is your turn`}</p>
     } else {
-        return <p>It is Opponent's turn</p>
+        return <p>{`Turn ${props.turn}: It is Opponent's turn`}</p>
     }
 }
 

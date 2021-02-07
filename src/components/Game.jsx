@@ -115,17 +115,6 @@ class Game extends Component {
                     console.log(`unknown action recieved: ${data.body}`)
                     break;
             }
-
-
-
-            // if (body.action === "move") {
-            //     this.movePiece(body.from, body.to)
-            // } else if (body.action === "assignColor") {
-            //     this.setState( { playerColor: body.color, status: "in-progress" } )
-            // } else if (body.action === "updateStatus") {
-            //     console.log("updating status")
-            //     this.setState( { status: body.status } )
-            // }
         }
     
         socket.onerror = (error) => {
@@ -330,6 +319,7 @@ class Game extends Component {
                     connected={ this.state.gameConnection != null } 
                     playerColor={ this.state.playerColor }
                     gameStatus={ this.state.status }
+                    turn={ this.state.turn }
                     isTurn={ this.isTurn() }
                     connect={ this.connect.bind(this) }
                     disconnect={ this.disconnect.bind(this) }
