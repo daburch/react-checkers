@@ -13,7 +13,7 @@ function updateGame(pieces) {
 function validateCell(cellID) {
     var c = cellID[0].charCodeAt(0) - 97
     var r = cellID[1].charCodeAt(0) - 48
-    var v = !(c < 0 || c > 7 || r < 0 || r > 7)
+    var v = !(c < 0 || c > 7 || r < 1 || r > 8)
 
     return [v, c, r]
 }
@@ -21,7 +21,7 @@ function validateCell(cellID) {
 export function newBoard() {
     var b = {}
 
-    b["a1"] = { color: "white", isKing: true }
+    b["a1"] = { color: "white", isKing: false }
     b["c1"] = { color: "white", isKing: false }
     b["e1"] = { color: "white", isKing: false }
     b["g1"] = { color: "white", isKing: false }
@@ -137,7 +137,7 @@ class Game extends Component {
         }
 
         if (!this.moveIsValid(from, to)) {
-            console.log("Can't send move: Invalid move.")
+            console.log(`invalid move: ${from} => ${to}`)
             return
         }
 
@@ -164,6 +164,14 @@ class Game extends Component {
         b[to] = b[from]
         delete b[from]
 
+        // promote king
+        const [, , tRow] = validateCell(to)
+        if (tRow === 8 && b[to].color === "white") {
+            b[to].isKing = true
+        } else if (tRow === 1 && b[to].color === "black") {
+            b[to].isKing = true
+        }
+
         this.incrementTurn()
 
         updateGame(b)
@@ -171,6 +179,7 @@ class Game extends Component {
 
     incrementTurn() {
         this.setState({ turn: this.state.turn + 1 })
+        console.log(`turn: ${this.state.turn}`)
         if (!this.playerHasValidMove()) {
             console.log("game over.")
             this.surrender()
@@ -182,8 +191,13 @@ class Game extends Component {
         const [fValid, fCol, fRow] = validateCell(from)
         const [tValid, tCol, tRow] = validateCell(to)
 
-        // from and/or to cell is not on the board
-        if (!fValid || !tValid) {
+        if (!fValid) {
+            console.log("from cell out of range")
+            return false
+        }
+
+        if (!tValid) {
+            console.log("to cell out of range")
             return false
         }
 
@@ -191,12 +205,19 @@ class Game extends Component {
 
         // source square must have a piece and that piece must match the player color
         var piece = b[from]
-        if (piece == null || piece.color !== this.state.playerColor) {
+        if (piece == null) {
+            console.log("no piece to move")
+            return false
+        }
+
+        if (piece.color !== this.state.playerColor) {
+            console.log("wrong color piece")
             return false
         }
 
         // target square must be empty
         if (b[to] != null) {
+            console.log("target cell not empty")
             return false
         }
 
@@ -206,6 +227,7 @@ class Game extends Component {
         
         // can only move 1 space left / right unless jumping
         if (!(cDelta === 1 || cDelta === -1)) {
+            console.log("moving too many columns")
             return false
         }
 
