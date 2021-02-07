@@ -59,7 +59,7 @@ class Game extends Component {
         super(props);
 
         this.state = {
-            turn: 0,
+            turn: 1,
             status: "disconnected",
             gameConnection: null,
             playerColor: null,
@@ -81,30 +81,51 @@ class Game extends Component {
     
         socket.onopen = () => {
             console.log("connected to game.")
-            this.setState({ status: "connected", board: new newBoard(), turn: 0, playerColor: null })
+            this.setState({ status: "connected", board: new newBoard(), turn: 1, playerColor: null })
             updateGame(this.state.board)
         }
     
         socket.onclose = (event) => {
             console.log("Disconnected from game.")
-            this.setState({ status: "disconnected", board: new newBoard(), turn: 0, playerColor: null })
+            this.setState({ status: "disconnected", board: new newBoard(), turn: 1, playerColor: null })
             updateGame(this.state.board)
         }
     
         socket.onmessage = (message) => {
-            console.log(message)
-    
             var data = JSON.parse(message.data)
             var body = JSON.parse(data.body)
     
-            if (body.action === "move") {
-                this.movePiece(body.from, body.to)
-            } else if (body.action === "assignColor") {
-                this.setState( { playerColor: body.color, status: "in-progress" } )
-            } else if (body.action === "updateStatus") {
-                console.log("updating status")
-                this.setState( { status: body.status } )
+            switch (body.action) {
+                case "move":
+                    console.log(`move action recieved: ${data.body}`)
+                    this.movePiece(body.from, body.to)
+                    break;
+
+                case "assignColor":
+                    console.log(`assignColor action recieved: ${data.body}`)
+                    this.setState( { playerColor: body.color, status: "in-progress" } )
+                    break;
+
+                case "updateStatus":
+                    console.log(`updateStatus action recieved: ${data.body}`)
+                    this.setState( { status: body.status } )
+                    break;
+
+                default:
+                    console.log(`unknown action recieved: ${data.body}`)
+                    break;
             }
+
+
+
+            // if (body.action === "move") {
+            //     this.movePiece(body.from, body.to)
+            // } else if (body.action === "assignColor") {
+            //     this.setState( { playerColor: body.color, status: "in-progress" } )
+            // } else if (body.action === "updateStatus") {
+            //     console.log("updating status")
+            //     this.setState( { status: body.status } )
+            // }
         }
     
         socket.onerror = (error) => {
@@ -136,8 +157,9 @@ class Game extends Component {
             return
         }
 
-        if (!this.moveIsValid(from, to)) {
-            console.log(`invalid move: ${from} => ${to}`)
+        const [valid, reason] = this.moveIsValid(from, to)
+        if (!valid) {
+            console.log(`invalid move: ${from} => ${to} : ${reason}`)
             return
         }
 
@@ -192,13 +214,11 @@ class Game extends Component {
         const [tValid, tCol, tRow] = validateCell(to)
 
         if (!fValid) {
-            console.log("from cell out of range")
-            return false
+            return [ false, "from cell out of range" ]
         }
 
         if (!tValid) {
-            console.log("to cell out of range")
-            return false
+            return [ false, "to cell out of range" ]
         }
 
         var b = this.state.board
@@ -206,19 +226,16 @@ class Game extends Component {
         // source square must have a piece and that piece must match the player color
         var piece = b[from]
         if (piece == null) {
-            console.log("no piece to move")
-            return false
+            return [ false, "no piece to move" ]
         }
 
         if (piece.color !== this.state.playerColor) {
-            console.log("wrong color piece")
-            return false
+            return [ false, "wrong color piece" ]
         }
 
         // target square must be empty
         if (b[to] != null) {
-            console.log("target cell not empty")
-            return false
+            return [ false, "target cell not empty" ]
         }
 
         // column and row deltas
@@ -227,24 +244,25 @@ class Game extends Component {
         
         // can only move 1 space left / right unless jumping
         if (!(cDelta === 1 || cDelta === -1)) {
-            console.log("moving too many columns")
-            return false
+            return [ false, "invalid column delta" ]
         }
 
         if (piece.isKing) {
             // kings can move in either direction
-            return rDelta === 1 || rDelta === -1
+            return [ (rDelta === 1 || rDelta === -1), "invalid row delta" ]
         } else {
-            return  (piece.color === "white" && rDelta === 1) ||    // white can only move 1 -> 8 by one space
-                    (piece.color === "black" && rDelta === -1)      // black can only move 8 -> 1 by one space
+            // white can only move 1 -> 8 by one space
+            // black can only move 8 -> 1 by one space
+            return [ ((piece.color === "white" && rDelta === 1) ||                            
+                        (piece.color === "black" && rDelta === -1)), "invalid row delta" ]
         }
     }
 
     isTurn() {
         if (this.state.playerColor === "white") {
-            return this.state.turn % 2 === 0
-        } else {
             return this.state.turn % 2 === 1
+        } else {
+            return this.state.turn % 2 === 0
         }
     }
 
@@ -253,7 +271,6 @@ class Game extends Component {
             return true
         }
 
-        console.log(this.state.board)
         for (let loc in this.state.board) {
             if (this.pieceHasValidMove(this.state.board[loc], loc)) {
                 return true
@@ -270,7 +287,8 @@ class Game extends Component {
 
         var ps = this.getPossibleSquares(location)
         return ps.some(function(value, index, array) {
-            return this.moveIsValid(location, value)
+            const [isValid, ] = this.moveIsValid(location, value)
+            return isValid
         }.bind(this))
     }
 
@@ -301,8 +319,6 @@ class Game extends Component {
             // -1, -1
             ps.push(String.fromCharCode(97 + col - 1) + (row - 1))
         }
-
-        console.log(`possible squares for ${location}: ${ps}`)
 
         return ps
     }
