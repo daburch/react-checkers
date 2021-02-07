@@ -58,7 +58,6 @@ class Game extends Component {
         super(props);
 
         this.state = {
-            gameID: 0,
             turn: 0,
             status: "disconnected",
             gameConnection: null,
@@ -81,12 +80,14 @@ class Game extends Component {
     
         socket.onopen = () => {
             console.log("connected to game.")
-            this.setState({ status: "connected", board: new newBoard() })
+            this.setState({ status: "connected", board: new newBoard(), turn: 0, playerColor: null })
             updateGame(this.state.board)
         }
     
         socket.onclose = (event) => {
             console.log("Disconnected from game.")
+            this.setState({ status: "disconnected", board: new newBoard(), turn: 0, playerColor: null })
+            updateGame(this.state.board)
         }
     
         socket.onmessage = (message) => {
@@ -158,8 +159,8 @@ class Game extends Component {
     incrementTurn() {
         this.setState({ turn: this.state.turn + 1 })
         if (!this.playerHasValidMove()) {
-            // TODO: end game
             console.log("game over.")
+            this.surrender()
         }
     }
 
