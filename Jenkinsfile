@@ -12,7 +12,7 @@ pipeline {
 
     stage('Checkout Source') {
       steps {
-        git 'https://github.com/daburch/golang-game-server.git'
+        git url: 'https://github.com/daburch/golang-game-server.git', branch: 'cicd-pipeline'
       }
     }
     
