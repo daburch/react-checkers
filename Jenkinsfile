@@ -12,7 +12,7 @@ pipeline {
 
     stage('Checkout Source') {
       steps {
-        git url: 'https://github.com/daburch/golang-game-server.git', branch: 'cicd-pipeline'
+        git url: 'https://github.com/daburch/react-checkers.git', branch: 'cicd-pipeline'
       }
     }
     
