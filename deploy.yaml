@@ -1,0 +1,39 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: react-checkers
+  name: react-checkers
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: react-checkers
+  template:
+    metadata:
+      labels:
+        app: react-checkers
+    spec:
+      containers:
+      - image: 172.16.16.100:5000/daburch/react-checkers:1
+        imagePullPolicy: Always
+        name: react-checkers
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: myweb
+  name: myweb
+spec:
+  ports:
+  - nodePort: 32325
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: react-checkers
+  type: NodePort
