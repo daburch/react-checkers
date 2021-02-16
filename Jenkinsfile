@@ -18,7 +18,7 @@ pipeline {
 
     stage('get ip') {
       steps {
-        ip = dig +short myip.opendns.com @resolver1.opendns.com
+        var ip = sh (script: 'dig +short myip.opendns.com @resolver1.opendns.com', returnStdout: true)
         echo $ip
       }
     }
