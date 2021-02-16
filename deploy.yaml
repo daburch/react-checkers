@@ -16,7 +16,7 @@ spec:
         app: react-checkers
     spec:
       containers:
-        - image: 172.16.16.100:5000/daburch/react-checkers:14
+        - image: 172.16.16.100:5000/daburch/react-checkers:15
           imagePullPolicy: Always
           name: react-checkers
           ports:
@@ -24,7 +24,7 @@ spec:
           env:
             - name: env
               value: dev
-            - name: GAME_SERVER_URL
+            - name: REACT_APP_GAME_SERVER_URL
               valueFrom:
                 secretKeyRef:
                   name: external-ip
