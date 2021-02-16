@@ -75,9 +75,10 @@ class Game extends Component {
 
         console.log("connecting to game...")
 
-        var gameServerIP = "ws://localhost:8080/ws"
+        var gameserverIP = process.env.REACT_APP_GAME_SERVER_URL
+        var websocketIP = `ws://${gameserverIP}:32326/ws`
 
-        let socket = new WebSocket(gameServerIP)
+        let socket = new WebSocket(websocketIP)
     
         socket.onopen = () => {
             console.log("connected to game.")
