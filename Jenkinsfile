@@ -16,13 +16,6 @@ pipeline {
       }
     }
 
-    stage('get ip') {
-      steps {
-        var ip = sh (script: 'dig +short myip.opendns.com @resolver1.opendns.com', returnStdout: true)
-        echo $ip
-      }
-    }
-    
     stage('Build Image') {
       steps{
         script {
