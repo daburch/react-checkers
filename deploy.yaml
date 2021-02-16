@@ -16,7 +16,7 @@ spec:
         app: react-checkers
     spec:
       containers:
-      - image: 172.16.16.100:5000/daburch/react-checkers:9
+      - image: 172.16.16.100:5000/daburch/react-checkers:10
         imagePullPolicy: Always
         name: react-checkers
 
